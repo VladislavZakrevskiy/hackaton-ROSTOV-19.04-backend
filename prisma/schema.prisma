@@ -1,0 +1,140 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource database {
+    provider = "postgresql"
+    url      = "postgresql://postgres:postgres@localhost:5432/hackathon?schema=public"
+}
+
+enum Role {
+    ADMIN @map("admin")
+    USER  @map("user")
+}
+
+model User {
+    id         String   @map("id")         @default(uuid())
+    role       Role     @map("role")       @default(USER)
+    login      String   @map("login")
+    password   String   @map("password")
+
+    sessions   Session[]
+
+    created_at DateTime @map("created_at") @default(now())
+    updated_at DateTime @map("updated_at") @updatedAt
+
+    @@id([id])
+    @@map("users")
+    @@unique([login])
+}
+
+model Session {
+    id            String   @map("id")            @default(uuid())
+    user_id       String   @map("user_id")       
+    fingerprint   String   @map("fingerprint")
+    access_token  String   @map("access_token")
+    refresh_token String   @map("refresh_token")
+
+    user          User                           @relation(fields: [user_id], references: [id])
+
+    created_at    DateTime @map("created_at")    @default(now())
+    updated_at    DateTime @map("updated_at")    @updatedAt
+
+    @@id([id])
+    @@map("sessions")
+    @@unique([access_token])
+    @@unique([refresh_token])
+    @@unique([user_id, fingerprint])
+}
+
+model Warehouse {
+    id          String   @map("id")         @default(uuid())
+    name        String   @map("name")
+
+    orders      Order[]
+    inventories Inventory[]
+
+    created_at  DateTime @map("created_at") @default(now())
+    updated_at  DateTime @map("updated_at") @updatedAt
+
+    @@id([id])
+    @@map("warehouses")
+}
+
+model Consumer {
+    id          String   @map("id")         @default(uuid())
+    name        String   @map("name")
+
+    orders      Order[]
+    inventories Inventory[]
+
+    created_at  DateTime @map("created_at") @default(now())
+    updated_at  DateTime @map("updated_at") @updatedAt
+
+    @@id([id])
+    @@map("consumers")
+}
+
+model Product {
+    id          String   @map("id")         @default(uuid())
+    name        String   @map("name")
+
+    positions   Position[]
+    inventories Inventory[]
+
+    created_at  DateTime @map("created_at") @default(now())
+    updated_at  DateTime @map("updated_at") @updatedAt
+
+    @@id([id])
+    @@map("products")
+}
+
+model Position {
+    id         String   @map("id")         @default(uuid())
+    quantity   Int      @map("quantity")
+    order_id   String   @map("order_id")
+    product_id String   @map("product_id")   
+
+    order      Order                       @relation(fields: [order_id], references: [id])
+    product    Product                     @relation(fields: [product_id], references: [id])
+
+    created_at DateTime @map("created_at") @default(now())
+    updated_at DateTime @map("updated_at") @updatedAt
+
+    @@id([id])
+    @@map("positions")
+}
+
+model Inventory {
+    id           String   @map("id")           @default(uuid())
+    quantity     Int      @map("quantity")
+    product_id   String   @map("product_id")  
+    consumer_id  String?  @map("consumer_id")
+    warehouse_id String?  @map("warehouse_id")
+
+    product      Product                       @relation(fields: [product_id], references: [id])
+    consumer     Consumer?                     @relation(fields: [consumer_id], references: [id])
+    warehouse    Warehouse?                    @relation(fields: [warehouse_id], references: [id])
+
+    created_at   DateTime @map("created_at")   @default(now())
+    updated_at   DateTime @map("updated_at")   @updatedAt
+
+    @@id([id])
+    @@map("inventories")
+}
+
+model Order {
+    id           String   @map("id")           @default(uuid())  
+    consumer_id  String?  @map("consumer_id")
+    warehouse_id String?  @map("warehouse_id")
+
+    consumer     Consumer?                     @relation(fields: [consumer_id], references: [id])
+    positions    Position[]
+    warehouse    Warehouse?                    @relation(fields: [warehouse_id], references: [id])
+
+    created_at   DateTime @map("created_at")   @default(now())
+    updated_at   DateTime @map("updated_at")   @updatedAt
+
+    @@id([id])
+    @@map("orders")
+}

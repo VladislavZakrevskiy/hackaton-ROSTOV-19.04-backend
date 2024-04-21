@@ -1,0 +1,1 @@
+export { Consumer as ConsumerEntity } from "@prisma/client"
